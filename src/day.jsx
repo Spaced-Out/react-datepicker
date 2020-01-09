@@ -1,219 +1,166 @@
-import React from "react";
-import PropTypes from "prop-types";
-import classnames from "classnames";
-import {
-  getDay,
-  getMonth,
-  getDate,
-  newDate,
-  isSameDay,
-  isDayDisabled,
-  isDayExcluded,
-  isDayInRange,
-  isEqual,
-  isBefore,
-  isAfter,
-  getDayOfWeekCode,
-  formatDate
-} from "./date_utils";
+import moment from 'moment'
+import React from 'react'
+import PropTypes from 'prop-types'
+import classnames from 'classnames'
+import { isSameDay, isDayDisabled, isDayInRange } from './date_utils'
 
 export default class Day extends React.Component {
   static propTypes = {
-    disabledKeyboardNavigation: PropTypes.bool,
-    day: PropTypes.instanceOf(Date).isRequired,
-    dayClassName: PropTypes.func,
-    endDate: PropTypes.instanceOf(Date),
-    highlightDates: PropTypes.instanceOf(Map),
+    day: PropTypes.object.isRequired,
+    endDate: PropTypes.object,
+    highlightDates: PropTypes.array,
     inline: PropTypes.bool,
     month: PropTypes.number,
     onClick: PropTypes.func,
     onMouseEnter: PropTypes.func,
-    preSelection: PropTypes.instanceOf(Date),
+    preSelection: PropTypes.object,
     selected: PropTypes.object,
-    selectingDate: PropTypes.instanceOf(Date),
+    selectingDate: PropTypes.object,
     selectsEnd: PropTypes.bool,
     selectsStart: PropTypes.bool,
-    startDate: PropTypes.instanceOf(Date),
-    renderDayContents: PropTypes.func
-  };
+    startDate: PropTypes.object,
+    utcOffset: PropTypes.number
+  }
 
-  handleClick = event => {
+  static defaultProps = {
+    utcOffset: moment.utc().utcOffset()
+  }
+
+  handleClick = (event) => {
     if (!this.isDisabled() && this.props.onClick) {
-      this.props.onClick(event);
+      this.props.onClick(event)
     }
-  };
+  }
 
-  handleMouseEnter = event => {
+  handleMouseEnter = (event) => {
     if (!this.isDisabled() && this.props.onMouseEnter) {
-      this.props.onMouseEnter(event);
+      this.props.onMouseEnter(event)
     }
-  };
+  }
 
-  isSameDay = other => isSameDay(this.props.day, other);
+  isSameDay = (other) => isSameDay(this.props.day, other)
 
   isKeyboardSelected = () =>
-    !this.props.disabledKeyboardNavigation &&
-    !this.props.inline &&
-    !this.isSameDay(this.props.selected) &&
-    this.isSameDay(this.props.preSelection);
+    !this.props.inline && !this.isSameDay(this.props.selected) && this.isSameDay(this.props.preSelection)
 
-  isDisabled = () => isDayDisabled(this.props.day, this.props);
+  isDisabled = () => isDayDisabled(this.props.day, this.props)
 
-  isExcluded = () => isDayExcluded(this.props.day, this.props);
-
-  getHighLightedClass = defaultClassName => {
-    const { day, highlightDates } = this.props;
-
+  isHighlighted = () => {
+    const { day, highlightDates } = this.props
     if (!highlightDates) {
-      return false;
+      return false
     }
-
-    // Looking for className in the Map of {'day string, 'className'}
-    const dayStr = formatDate(day, "MM.dd.yyyy");
-    return highlightDates.get(dayStr);
-  };
+    return highlightDates.some(testDay => isSameDay(day, testDay))
+  }
 
   isInRange = () => {
-    const { day, startDate, endDate } = this.props;
+    const { day, startDate, endDate } = this.props
     if (!startDate || !endDate) {
-      return false;
+      return false
     }
-    return isDayInRange(day, startDate, endDate);
-  };
+    return isDayInRange(day, startDate, endDate)
+  }
 
   isInSelectingRange = () => {
-    const {
-      day,
-      selectsStart,
-      selectsEnd,
-      selectingDate,
-      startDate,
-      endDate
-    } = this.props;
+    const { day, selectsStart, selectsEnd, selectingDate, startDate, endDate } = this.props
 
     if (!(selectsStart || selectsEnd) || !selectingDate || this.isDisabled()) {
-      return false;
+      return false
     }
 
-    if (
-      selectsStart &&
-      endDate &&
-      (isBefore(selectingDate, endDate) || isEqual(selectingDate, endDate))
-    ) {
-      return isDayInRange(day, selectingDate, endDate);
+    if (selectsStart && endDate && selectingDate.isSameOrBefore(endDate)) {
+      return isDayInRange(day, selectingDate, endDate)
     }
 
-    if (
-      selectsEnd &&
-      startDate &&
-      (isAfter(selectingDate, startDate) || isEqual(selectingDate, startDate))
-    ) {
-      return isDayInRange(day, startDate, selectingDate);
+    if (selectsEnd && startDate && selectingDate.isSameOrAfter(startDate)) {
+      return isDayInRange(day, startDate, selectingDate)
     }
 
-    return false;
-  };
+    return false
+  }
 
   isSelectingRangeStart = () => {
     if (!this.isInSelectingRange()) {
-      return false;
+      return false
     }
 
-    const { day, selectingDate, startDate, selectsStart } = this.props;
+    const { day, selectingDate, startDate, selectsStart } = this.props
 
     if (selectsStart) {
-      return isSameDay(day, selectingDate);
+      return isSameDay(day, selectingDate)
     } else {
-      return isSameDay(day, startDate);
+      return isSameDay(day, startDate)
     }
-  };
+  }
 
   isSelectingRangeEnd = () => {
     if (!this.isInSelectingRange()) {
-      return false;
+      return false
     }
 
-    const { day, selectingDate, endDate, selectsEnd } = this.props;
+    const { day, selectingDate, endDate, selectsEnd } = this.props
 
     if (selectsEnd) {
-      return isSameDay(day, selectingDate);
+      return isSameDay(day, selectingDate)
     } else {
-      return isSameDay(day, endDate);
+      return isSameDay(day, endDate)
     }
-  };
+  }
 
   isRangeStart = () => {
-    const { day, startDate, endDate } = this.props;
+    const { day, startDate, endDate } = this.props
     if (!startDate || !endDate) {
-      return false;
+      return false
     }
-    return isSameDay(startDate, day);
-  };
+    return isSameDay(startDate, day)
+  }
 
   isRangeEnd = () => {
-    const { day, startDate, endDate } = this.props;
+    const { day, startDate, endDate } = this.props
     if (!startDate || !endDate) {
-      return false;
+      return false
     }
-    return isSameDay(endDate, day);
-  };
+    return isSameDay(endDate, day)
+  }
 
   isWeekend = () => {
-    const weekday = getDay(this.props.day);
-    return weekday === 0 || weekday === 6;
-  };
+    const weekday = this.props.day.day()
+    return weekday === 0 || weekday === 6
+  }
 
   isOutsideMonth = () => {
-    return (
-      this.props.month !== undefined &&
-      this.props.month !== getMonth(this.props.day)
-    );
-  };
+    return this.props.month !== undefined &&
+      this.props.month !== this.props.day.month()
+  }
 
-  getClassNames = date => {
-    const dayClassName = this.props.dayClassName
-      ? this.props.dayClassName(date)
-      : undefined;
-    return classnames(
-      "react-datepicker__day",
-      dayClassName,
-      "react-datepicker__day--" + getDayOfWeekCode(this.props.day),
-      {
-        "react-datepicker__day--disabled": this.isDisabled(),
-        "react-datepicker__day--excluded": this.isExcluded(),
-        "react-datepicker__day--selected": this.isSameDay(this.props.selected),
-        "react-datepicker__day--keyboard-selected": this.isKeyboardSelected(),
-        "react-datepicker__day--range-start": this.isRangeStart(),
-        "react-datepicker__day--range-end": this.isRangeEnd(),
-        "react-datepicker__day--in-range": this.isInRange(),
-        "react-datepicker__day--in-selecting-range": this.isInSelectingRange(),
-        "react-datepicker__day--selecting-range-start": this.isSelectingRangeStart(),
-        "react-datepicker__day--selecting-range-end": this.isSelectingRangeEnd(),
-        "react-datepicker__day--today": this.isSameDay(newDate()),
-        "react-datepicker__day--weekend": this.isWeekend(),
-        "react-datepicker__day--outside-month": this.isOutsideMonth()
-      },
-      this.getHighLightedClass("react-datepicker__day--highlighted")
-    );
-  };
+  getClassNames = () => {
+    return classnames('react-datepicker__day', {
+      'react-datepicker__day--disabled': this.isDisabled(),
+      'react-datepicker__day--selected': this.isSameDay(this.props.selected),
+      'react-datepicker__day--keyboard-selected': this.isKeyboardSelected(),
+      'react-datepicker__day--highlighted': this.isHighlighted(),
+      'react-datepicker__day--range-start': this.isRangeStart(),
+      'react-datepicker__day--range-end': this.isRangeEnd(),
+      'react-datepicker__day--in-range': this.isInRange(),
+      'react-datepicker__day--in-selecting-range': this.isInSelectingRange(),
+      'react-datepicker__day--selecting-range-start': this.isSelectingRangeStart(),
+      'react-datepicker__day--selecting-range-end': this.isSelectingRangeEnd(),
+      'react-datepicker__day--today': this.isSameDay(moment.utc().utcOffset(this.props.utcOffset)),
+      'react-datepicker__day--weekend': this.isWeekend(),
+      'react-datepicker__day--outside-month': this.isOutsideMonth()
+    })
+  }
 
-  render() {
+  render () {
     return (
       <div
-        className={this.getClassNames(this.props.day)}
-        onClick={this.handleClick}
-        onMouseEnter={this.handleMouseEnter}
-        aria-label={`day-${getDate(this.props.day)}`}
-        role="option"
-        aria-disabled={this.isDisabled()}
-      >
-        {this.props.renderDayContents
-          ? this.props.renderDayContents(
-              getDate(this.props.day),
-              this.props.day
-            )
-          : getDate(this.props.day)}
+          className={this.getClassNames()}
+          onClick={this.handleClick}
+          onMouseEnter={this.handleMouseEnter}
+          aria-label={`day-${this.props.day.date()}`}
+          role="option">
+          {this.props.day.date()}
       </div>
-    );
+    )
   }
 }

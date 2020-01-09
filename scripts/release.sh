@@ -7,8 +7,8 @@ git checkout .
 
 npm version $1
 
-yarn global add react-docgen
-e
+npm install -g react-docgen
+react-docgen ./src/*.jsx | ./scripts/buildDocs.sh
 
 git add .
 
@@ -18,7 +18,6 @@ git push
 
 git push --tags
 
-yarn run build
-
 npm publish
 
+./docs-site/publish.sh
