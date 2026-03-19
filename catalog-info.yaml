@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: react-datepicker
+  description: '[![npm version](https://badge.fury.io/js/react-datepicker.svg)](https://badge.fury.io/js/react-datepicker)'
+  annotations:
+    github.com/project-slug: Spaced-Out/react-datepicker
+    backstage.io/techdocs-ref: dir:.
+  tags:
+  - nodejs
+  - react
+  - express
+  links:
+  - url: https://github.com/Spaced-Out/react-datepicker
+    title: GitHub Repository
+    icon: github
+spec:
+  type: library
+  lifecycle: production
+  owner: group:default/sense-engineering
+  system: system:default/other
